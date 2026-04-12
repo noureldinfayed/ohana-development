@@ -419,43 +419,33 @@ export default function HeroJourney() {
   // offset: ["start start", "end end"] means:
   //   0 → element top  aligns with viewport top  (sticky begins, frame 0)
   //   1 → element bottom aligns with viewport bottom (sticky ends, last frame)
-  // Default offset ["start end","end start"] would start at 0.2 on page load,
-  // skipping the first ~24 frames and never completing the sequence.
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ['start start', 'end end'],
   })
 
-  // ── Coalesced RAF draw — smoother than cancel/reschedule ────────────────
-  // Multiple scroll events between two screen paints collapse into ONE draw
-  // that always uses the latest requested frame index.
-  // Cancelling a RAF before it executes means we paint LESS than 60fps;
-  // coalescing means we paint exactly once per screen frame at the latest index.
-  const pendingFrameRef = useRef(-1)
-  const rafPendingRef   = useRef(false)
-
+  // ── Direct RAF draw — one requestAnimationFrame per scroll event ─────────
+  // Frame index is strictly bounded [0, TOTAL_FRAMES-1] so it can never
+  // reference an out-of-bounds slot, and cover-scaling fills the canvas
+  // regardless of aspect ratio.
   const drawFrame = useCallback((index: number) => {
-    pendingFrameRef.current = index           // record latest requested frame
+    const canvas = canvasRef.current
+    const ctx    = canvas?.getContext('2d')
+    const img    = imagesRef.current[index]
+    if (!ctx || !canvas || !img?.complete || !img.naturalWidth) return
 
-    if (rafPendingRef.current) return         // RAF already queued — let it pick up the new index
-
-    rafPendingRef.current = true
     rafRef.current = requestAnimationFrame(() => {
-      rafPendingRef.current = false
+      // Re-read canvas/ctx inside the RAF in case the component unmounted
+      const c2 = canvasRef.current
+      const c2ctx = c2?.getContext('2d')
+      const i2 = imagesRef.current[index]
+      if (!c2ctx || !c2 || !i2?.complete || !i2.naturalWidth) return
 
-      const canvas = canvasRef.current
-      const ctx    = canvas?.getContext('2d')
-      const img    = imagesRef.current[pendingFrameRef.current]
-      if (!ctx || !canvas || !img?.complete || !img.naturalWidth) return
-
-      const scale = Math.max(
-        canvas.width  / img.naturalWidth,
-        canvas.height / img.naturalHeight
-      )
-      const x = (canvas.width  - img.naturalWidth  * scale) / 2
-      const y = (canvas.height - img.naturalHeight * scale) / 2
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.drawImage(img, x, y, img.naturalWidth * scale, img.naturalHeight * scale)
+      const scale = Math.max(c2.width / i2.naturalWidth, c2.height / i2.naturalHeight)
+      const x = (c2.width  - i2.naturalWidth  * scale) / 2
+      const y = (c2.height - i2.naturalHeight * scale) / 2
+      c2ctx.clearRect(0, 0, c2.width, c2.height)
+      c2ctx.drawImage(i2, x, y, i2.naturalWidth * scale, i2.naturalHeight * scale)
     })
   }, [])
 
@@ -505,9 +495,12 @@ export default function HeroJourney() {
 
   // ── Scroll → canvas: pure DOM mutation, ZERO React state updates ─────────
   useMotionValueEvent(scrollYProgress, 'change', (latest) => {
-    const frameIndex = Math.min(
-      Math.floor(latest * TOTAL_FRAMES),
-      TOTAL_FRAMES - 1
+    if (!canvasRef.current || !imagesRef.current.length) return
+    // Strictly bounded: Math.max(0,...) guards against negative progress,
+    // Math.min(..., TOTAL_FRAMES-1) guards against overshooting on fast scroll.
+    const frameIndex = Math.max(
+      0,
+      Math.min(TOTAL_FRAMES - 1, Math.floor(latest * TOTAL_FRAMES))
     )
     currentFrameRef.current = frameIndex
     drawFrame(frameIndex)

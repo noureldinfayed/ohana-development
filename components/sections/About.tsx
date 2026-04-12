@@ -7,7 +7,6 @@ export default function About() {
   const sectionRef  = useRef<HTMLDivElement>(null)
   const imageRef    = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
-  const [parallax, setParallax] = useState(0)
 
   useEffect(() => {
     const el = sectionRef.current
@@ -20,13 +19,17 @@ export default function About() {
     return () => observer.disconnect()
   }, [])
 
+  // Parallax: direct DOM mutation — no setState, no React re-render per frame
   useEffect(() => {
     const onScroll = () => {
       const el = imageRef.current
       if (!el) return
-      const rect = el.getBoundingClientRect()
+      const rect   = el.getBoundingClientRect()
       const center = rect.top + rect.height / 2 - window.innerHeight / 2
-      setParallax(center * 0.05)
+      const offset = center * 0.05
+      // Apply directly to the <img> element so React never re-renders
+      const img = el.querySelector('img') as HTMLElement | null
+      if (img) img.style.transform = `translateY(${offset}px) translateZ(0)`
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -163,8 +166,11 @@ export default function About() {
               fill
               style={{
                 objectFit: 'cover',
-                transform: `translateY(${parallax}px)`,
-                transition: 'transform 0.1s linear',
+                // translateZ(0) forces a GPU compositing layer so parallax
+                // never triggers a CPU repaint — set by the scroll handler above
+                willChange: 'transform',
+                WebkitTransform: 'translateZ(0)',
+                transform: 'translateZ(0)',
               }}
               sizes="(max-width: 768px) 100vw, 50vw"
               loading="lazy"

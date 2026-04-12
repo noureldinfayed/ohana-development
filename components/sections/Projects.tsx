@@ -151,6 +151,8 @@ export default function Projects() {
                 gap: '32px',
                 paddingLeft: '24px',
                 paddingRight: '24px',
+                // willChange promotes to GPU compositing layer so translateX
+                // updates are handled entirely on the compositor thread
                 willChange: 'transform',
                 transition: 'none',
               }}
