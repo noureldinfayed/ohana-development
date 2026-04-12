@@ -200,25 +200,27 @@ function ScrollHint({ scrollYProgress }: { scrollYProgress: MotionValue<number> 
 }
 
 // ─── HERO TEXT OVERLAY ────────────────────────────────────────────────────
-// All animations driven by useTransform — bypasses React render cycle completely
 function HeroTextOverlay({
   scrollYProgress,
 }: {
   scrollYProgress: MotionValue<number>
 }) {
-  // Entire text block: fade in at 10%, hold, fade out at 75%
+  // Text fades in 0→20%, holds, fades out 88→96% (much later than before)
   const textOpacity = useTransform(
     scrollYProgress,
-    [0.08, 0.2, 0.72, 0.82],
-    [0, 1, 1, 0]
+    [0.06, 0.18, 0.88, 0.96],
+    [0,    1,    1,    0]
   )
-  const textY = useTransform(scrollYProgress, [0.08, 0.22], ['28px', '0px'])
+  const textY = useTransform(scrollYProgress, [0.06, 0.2], ['32px', '0px'])
 
-  // Eyebrow slightly earlier
-  const eyebrowOpacity = useTransform(scrollYProgress, [0.05, 0.16], [0, 1])
+  // Eyebrow a beat ahead of the headline
+  const eyebrowOpacity = useTransform(scrollYProgress, [0.04, 0.14], [0, 1])
 
-  // CTA appears near end of sequence
-  const ctaOpacity = useTransform(scrollYProgress, [0.62, 0.75], [0, 1])
+  // CTA fades in at 65%, stays fully visible right through to the end
+  const ctaOpacity = useTransform(scrollYProgress, [0.62, 0.74], [0, 1])
+
+  // The dark backdrop behind the text fades in with the text
+  const backdropOpacity = useTransform(scrollYProgress, [0.06, 0.22], [0, 1])
 
   return (
     <div
@@ -233,27 +235,47 @@ function HeroTextOverlay({
         pointerEvents: 'none',
       }}
     >
-      {/* Radial vignette */}
+      {/* Permanent edge vignette — heavier than before so text always pops */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'radial-gradient(ellipse at center, rgba(6,12,24,0) 30%, rgba(6,12,24,0.72) 100%)',
+            'radial-gradient(ellipse at center, rgba(6,12,24,0) 20%, rgba(6,12,24,0.82) 100%)',
           pointerEvents: 'none',
         }}
       />
 
-      {/* Bottom fade to section below */}
+      {/* Bottom fade into next section */}
       <div
         style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          height: '280px',
-          background: 'linear-gradient(to top, #060C18, transparent)',
+          height: '320px',
+          background: 'linear-gradient(to top, #060C18 15%, transparent)',
           pointerEvents: 'none',
+        }}
+      />
+
+      {/* Blur + dark card backing the text — fades in with text */}
+      <motion.div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          x: '-50%',
+          y: '-50%',
+          width: 'min(820px, 90vw)',
+          borderRadius: '4px',
+          background: 'rgba(6,12,24,0.45)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          border: '1px solid rgba(201,169,110,0.1)',
+          opacity: backdropOpacity,
+          pointerEvents: 'none',
+          padding: '64px 56px 72px',
         }}
       />
 
@@ -266,7 +288,8 @@ function HeroTextOverlay({
           opacity: textOpacity,
           y: textY,
           padding: '0 24px',
-          maxWidth: '900px',
+          maxWidth: '820px',
+          width: '100%',
         }}
       >
         <motion.div
@@ -286,10 +309,12 @@ function HeroTextOverlay({
         <h1
           style={{
             fontFamily: 'var(--font-playfair), Georgia, serif',
-            fontSize: 'clamp(72px, 11vw, 148px)',
-            lineHeight: 0.87,
+            fontSize: 'clamp(64px, 10vw, 140px)',
+            lineHeight: 0.9,
             color: '#F0E8D8',
             margin: 0,
+            // text-shadow for legibility over any frame
+            textShadow: '0 2px 40px rgba(6,12,24,0.6)',
           }}
         >
           Exquisite
@@ -303,7 +328,7 @@ function HeroTextOverlay({
             height: '1px',
             backgroundColor: '#C9A96E',
             margin: '32px auto',
-            opacity: 0.6,
+            opacity: 0.7,
           }}
         />
 
@@ -312,25 +337,30 @@ function HeroTextOverlay({
             fontFamily: 'var(--font-cormorant), Georgia, serif',
             fontSize: '22px',
             fontStyle: 'italic',
-            color: 'rgba(240,232,216,0.55)',
-            lineHeight: 1.4,
+            // brighter than before — was 0.55 opacity
+            color: 'rgba(240,232,216,0.78)',
+            lineHeight: 1.45,
           }}
         >
           Redefining luxury real estate across the Middle East
         </p>
       </motion.div>
 
-      {/* CTA — appears at end of sequence */}
+      {/* CTA block — appears at ~65% and stays until section end */}
       <motion.div
         style={{
           position: 'absolute',
-          bottom: '120px',
+          bottom: '108px',
           left: '50%',
           x: '-50%',
           zIndex: 2,
           opacity: ctaOpacity,
           pointerEvents: 'auto',
           whiteSpace: 'nowrap',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '14px',
         }}
       >
         <a
@@ -339,25 +369,34 @@ function HeroTextOverlay({
             display: 'inline-block',
             fontFamily: 'var(--font-inter), system-ui, sans-serif',
             fontSize: '9px',
-            letterSpacing: '0.32em',
+            letterSpacing: '0.35em',
             textTransform: 'uppercase',
-            color: '#F0E8D8',
+            color: '#060C18',
+            backgroundColor: '#C9A96E',
             border: '1px solid #C9A96E',
-            padding: '16px 40px',
+            padding: '16px 48px',
             textDecoration: 'none',
             transition: 'background-color 0.3s, color 0.3s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#C9A96E'
-            e.currentTarget.style.color = '#060C18'
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = '#C9A96E'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent'
-            e.currentTarget.style.color = '#F0E8D8'
+            e.currentTarget.style.backgroundColor = '#C9A96E'
+            e.currentTarget.style.color = '#060C18'
           }}
         >
           Discover Our Projects
         </a>
+        {/* Subtle scroll-down nudge below CTA */}
+        <div
+          style={{
+            width: '1px',
+            height: '32px',
+            background: 'linear-gradient(to bottom, rgba(201,169,110,0.6), transparent)',
+          }}
+        />
       </motion.div>
     </div>
   )
@@ -387,17 +426,28 @@ export default function HeroJourney() {
     offset: ['start start', 'end end'],
   })
 
-  // ── Canvas draw — called directly, no state involved ────────────────────
+  // ── Coalesced RAF draw — smoother than cancel/reschedule ────────────────
+  // Multiple scroll events between two screen paints collapse into ONE draw
+  // that always uses the latest requested frame index.
+  // Cancelling a RAF before it executes means we paint LESS than 60fps;
+  // coalescing means we paint exactly once per screen frame at the latest index.
+  const pendingFrameRef = useRef(-1)
+  const rafPendingRef   = useRef(false)
+
   const drawFrame = useCallback((index: number) => {
-    const canvas = canvasRef.current
-    const ctx    = canvas?.getContext('2d')
-    const img    = imagesRef.current[index]
-    if (!ctx || !canvas || !img?.complete || !img.naturalWidth) return
+    pendingFrameRef.current = index           // record latest requested frame
 
-    // Cancel any pending RAF before scheduling a new one
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    if (rafPendingRef.current) return         // RAF already queued — let it pick up the new index
 
+    rafPendingRef.current = true
     rafRef.current = requestAnimationFrame(() => {
+      rafPendingRef.current = false
+
+      const canvas = canvasRef.current
+      const ctx    = canvas?.getContext('2d')
+      const img    = imagesRef.current[pendingFrameRef.current]
+      if (!ctx || !canvas || !img?.complete || !img.naturalWidth) return
+
       const scale = Math.max(
         canvas.width  / img.naturalWidth,
         canvas.height / img.naturalHeight
