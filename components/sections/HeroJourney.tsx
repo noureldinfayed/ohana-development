@@ -377,8 +377,15 @@ export default function HeroJourney() {
   const [loadProgress, setLoadProgress] = useState(0)
 
   // ── Framer Motion scroll tracking ───────────────────────────────────────
-  // scrollYProgress is a MotionValue — we never read it as plain JS state
-  const { scrollYProgress } = useScroll({ target: containerRef })
+  // offset: ["start start", "end end"] means:
+  //   0 → element top  aligns with viewport top  (sticky begins, frame 0)
+  //   1 → element bottom aligns with viewport bottom (sticky ends, last frame)
+  // Default offset ["start end","end start"] would start at 0.2 on page load,
+  // skipping the first ~24 frames and never completing the sequence.
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end'],
+  })
 
   // ── Canvas draw — called directly, no state involved ────────────────────
   const drawFrame = useCallback((index: number) => {

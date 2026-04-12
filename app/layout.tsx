@@ -60,13 +60,19 @@ export default function RootLayout({
       className={`${playfair.variable} ${inter.variable} ${cormorant.variable} antialiased`}
       style={{ overflowX: 'hidden' }}
     >
+      {/*
+       * CRITICAL: body must NOT have overflow-x:hidden — that creates a BFC
+       * scroll container, breaking position:sticky on all children.
+       * overflow-x:clip achieves the same visual clipping without a BFC.
+       * Also no flex/min-h on body — keep it a plain block so the window
+       * remains the sole scroll container that sticky elements reference.
+       */}
       <body
-        className="min-h-full flex flex-col"
         style={{
           backgroundColor: '#060C18',
           color: '#F0E8D8',
           fontFamily: 'var(--font-inter), system-ui, sans-serif',
-          overflowX: 'hidden',
+          overflowX: 'clip',
         }}
       >
         <LenisProvider>{children}</LenisProvider>
