@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
 const OFFICES = [
   {
@@ -65,13 +66,36 @@ export default function Contact() {
         overflow: 'hidden',
         backgroundColor: '#060C18',
         padding: '120px 0 80px',
+        position: 'relative',
       }}
     >
+      {/* Atmospheric background image */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <Image
+          src="/images/ui/background1.jpg"
+          alt=""
+          fill
+          style={{ objectFit: 'cover', objectPosition: 'center', opacity: 0.18 }}
+          sizes="100vw"
+          loading="lazy"
+          aria-hidden="true"
+        />
+        {/* Gradient mask: fade in from top, fade out at bottom */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to bottom, #060C18 0%, transparent 20%, transparent 80%, #060C18 100%)',
+          }}
+        />
+      </div>
       <div
         style={{
           maxWidth: '1280px',
           margin: '0 auto',
           padding: '0 24px',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         {/* Section header */}

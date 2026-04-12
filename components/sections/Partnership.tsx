@@ -11,7 +11,7 @@ const STATS = [
 
 export default function Partnership() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const [clipProgress, setClipProgress] = useState(0)
+  const clipRef    = useRef<HTMLDivElement>(null)   // direct DOM target — no setState
   const [statsVisible, setStatsVisible] = useState(false)
   const [leftIn,  setLeftIn]  = useState(false)
   const [rightIn, setRightIn] = useState(false)
@@ -36,20 +36,20 @@ export default function Partnership() {
 
   useEffect(() => {
     const onScroll = () => {
-      const el = sectionRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const viewH = window.innerHeight
-      // 0 when section top is at bottom of viewport, 1 when section top is above viewport
+      const el  = sectionRef.current
+      const clip = clipRef.current
+      if (!el || !clip) return
+      const rect     = el.getBoundingClientRect()
+      const viewH    = window.innerHeight
       const progress = Math.max(0, Math.min(1, (viewH - rect.top) / (viewH + rect.height)))
-      setClipProgress(progress)
+      const radius   = Math.min(progress * 180, 130)
+      // Direct DOM mutation — zero React re-renders on scroll
+      clip.style.clipPath = `circle(${radius}% at 50% 50%)`
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  const clipRadius = Math.min(clipProgress * 180, 130)
 
   return (
     <section
@@ -66,13 +66,14 @@ export default function Partnership() {
         overflow: 'hidden',
       }}
     >
-      {/* Background image with clip reveal */}
+      {/* Background image with clip reveal — driven by direct DOM mutation, no setState */}
       <div
+        ref={clipRef}
         style={{
           position: 'absolute',
           inset: 0,
-          clipPath: `circle(${clipRadius}% at 50% 50%)`,
-          transition: 'clip-path 0.1s ease-out',
+          clipPath: 'circle(0% at 50% 50%)',
+          willChange: 'clip-path',
         }}
       >
         <Image

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 
 const NEWS_ITEMS = [
   {
@@ -36,18 +36,39 @@ function NewsCard({
   index: number
   visible: boolean
 }) {
-  const [hovered, setHovered] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  // Direct DOM hover — no useState, no React re-render
+  const onEnter = useCallback(() => {
+    const el = cardRef.current
+    if (!el) return
+    el.style.borderColor = 'rgba(201,169,110,0.4)'
+    el.style.transform    = 'scale(1.02) translateZ(0)'
+    const link = el.querySelector<HTMLElement>('.news-read-more')
+    if (link) link.style.color = '#C9A96E'
+  }, [])
+
+  const onLeave = useCallback(() => {
+    const el = cardRef.current
+    if (!el) return
+    el.style.borderColor = 'rgba(201,169,110,0.1)'
+    el.style.transform    = 'scale(1) translateZ(0)'
+    const link = el.querySelector<HTMLElement>('.news-read-more')
+    if (link) link.style.color = 'rgba(240,232,216,0.4)'
+  }, [])
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      ref={cardRef}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
       style={{
         backgroundColor: 'rgba(6,12,24,0.8)',
-        border: `1px solid ${hovered ? 'rgba(201,169,110,0.4)' : 'rgba(201,169,110,0.1)'}`,
+        border: '1px solid rgba(201,169,110,0.1)',
         padding: item.featured ? '40px' : '32px',
-        transform: hovered ? 'scale(1.02)' : 'scale(1)',
-        transition: 'border-color 0.25s ease, transform 0.3s ease, opacity 0.7s ease, translateY 0.7s ease',
+        transform: 'scale(1) translateZ(0)',
+        willChange: 'transform',
+        transition: 'border-color 0.25s ease, transform 0.3s ease, opacity 0.7s ease',
         opacity: visible ? 1 : 0,
         transitionDelay: `${index * 0.12}s`,
         cursor: 'pointer',
@@ -111,13 +132,14 @@ function NewsCard({
         </p>
       )}
 
-      {/* Read more link */}
+      {/* Read more — color toggled by direct DOM mutation above */}
       <div
+        className="news-read-more"
         style={{
           fontFamily: 'var(--font-inter), system-ui, sans-serif',
           fontSize: '9px',
           letterSpacing: '0.28em',
-          color: hovered ? '#C9A96E' : 'rgba(240,232,216,0.4)',
+          color: 'rgba(240,232,216,0.4)',
           textTransform: 'uppercase',
           transition: 'color 0.2s',
           marginTop: 'auto',

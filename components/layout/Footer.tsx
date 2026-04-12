@@ -63,8 +63,28 @@ export default function Footer() {
         borderTop: '1px solid rgba(201,169,110,0.1)',
         width: '100%',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
+      {/* Subtle architectural background */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <Image
+          src="/images/ui/background4.jpg"
+          alt=""
+          fill
+          style={{ objectFit: 'cover', objectPosition: 'center top', opacity: 0.12 }}
+          sizes="100vw"
+          loading="lazy"
+          aria-hidden="true"
+        />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to bottom, #060C18 0%, rgba(6,12,24,0.6) 40%, rgba(6,12,24,0.6) 60%, #060C18 100%)',
+          }}
+        />
+      </div>
       <div
         style={{
           maxWidth: '1280px',
@@ -73,6 +93,8 @@ export default function Footer() {
           display: 'grid',
           gridTemplateColumns: '2fr 1fr 1fr 1.5fr',
           gap: '48px',
+          position: 'relative',
+          zIndex: 1,
         }}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
       >
@@ -292,6 +314,8 @@ export default function Footer() {
           padding: '20px 24px',
           maxWidth: '1280px',
           margin: '0 auto',
+          position: 'relative',
+          zIndex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',

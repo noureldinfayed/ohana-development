@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 
 const VALUES = [
   {
@@ -141,20 +141,35 @@ function ValueCard({
   index: number
   visible: boolean
 }) {
-  const [hovered, setHovered] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  const onEnter = useCallback(() => {
+    const el = cardRef.current
+    if (!el) return
+    el.style.borderColor = 'rgba(201,169,110,0.4)'
+    el.style.boxShadow   = '0 0 32px rgba(201,169,110,0.08)'
+  }, [])
+
+  const onLeave = useCallback(() => {
+    const el = cardRef.current
+    if (!el) return
+    el.style.borderColor = 'rgba(201,169,110,0.12)'
+    el.style.boxShadow   = 'none'
+  }, [])
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      ref={cardRef}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
       style={{
         backgroundColor: 'rgba(11,18,33,0.6)',
-        border: `1px solid ${hovered ? 'rgba(201,169,110,0.4)' : 'rgba(201,169,110,0.12)'}`,
-        boxShadow: hovered ? '0 0 32px rgba(201,169,110,0.08)' : 'none',
+        border: '1px solid rgba(201,169,110,0.12)',
         padding: '40px',
         transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(28px)',
+        transform: visible ? 'translateY(0) translateZ(0)' : 'translateY(28px) translateZ(0)',
+        willChange: 'opacity, transform',
         transitionProperty: 'opacity, transform, border-color, box-shadow',
         transitionDuration: `0.7s, 0.7s, 0.3s, 0.3s`,
         transitionDelay: `${0.1 * index}s, ${0.1 * index}s, 0s, 0s`,

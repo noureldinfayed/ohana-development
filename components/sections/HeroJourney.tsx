@@ -219,9 +219,6 @@ function HeroTextOverlay({
   // CTA fades in at 65%, stays fully visible right through to the end
   const ctaOpacity = useTransform(scrollYProgress, [0.62, 0.74], [0, 1])
 
-  // The dark backdrop behind the text fades in with the text
-  const backdropOpacity = useTransform(scrollYProgress, [0.06, 0.22], [0, 1])
-
   return (
     <div
       style={{
@@ -235,13 +232,13 @@ function HeroTextOverlay({
         pointerEvents: 'none',
       }}
     >
-      {/* Permanent edge vignette — heavier than before so text always pops */}
+      {/* Edge vignette */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'radial-gradient(ellipse at center, rgba(6,12,24,0) 20%, rgba(6,12,24,0.82) 100%)',
+            'radial-gradient(ellipse at center, rgba(6,12,24,0) 20%, rgba(6,12,24,0.75) 100%)',
           pointerEvents: 'none',
         }}
       />
@@ -256,26 +253,6 @@ function HeroTextOverlay({
           height: '320px',
           background: 'linear-gradient(to top, #060C18 15%, transparent)',
           pointerEvents: 'none',
-        }}
-      />
-
-      {/* Blur + dark card backing the text — fades in with text */}
-      <motion.div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          x: '-50%',
-          y: '-50%',
-          width: 'min(820px, 90vw)',
-          borderRadius: '4px',
-          background: 'rgba(6,12,24,0.45)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-          border: '1px solid rgba(201,169,110,0.1)',
-          opacity: backdropOpacity,
-          pointerEvents: 'none',
-          padding: '64px 56px 72px',
         }}
       />
 
