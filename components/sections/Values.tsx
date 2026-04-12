@@ -116,11 +116,7 @@ export default function Values() {
 
         {/* Cards grid */}
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '24px',
-          }}
+          style={{ gap: '24px' }}
           className="grid grid-cols-1 md:grid-cols-2"
         >
           {VALUES.map((value, i) => (

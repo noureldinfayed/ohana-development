@@ -10,10 +10,10 @@ interface StatItem {
 }
 
 const STATS: StatItem[] = [
-  { target: 35, prefix: '',  suffix: '+', label: ['YEARS OF', 'LEGACY'] },
-  { target: 9000, prefix: '', suffix: '+', label: ['UNITS', 'DELIVERED'] },
-  { target: 2000, prefix: '', suffix: '+', label: ['TEAM', 'MEMBERS'] },
-  { target: 5,   prefix: '$', suffix: 'Bn+', label: ['TOTAL', 'ASSETS'] },
+  { target: 35,   prefix: '',  suffix: '+',   label: ['YEARS OF',  'LEGACY']    },
+  { target: 9000, prefix: '',  suffix: '+',   label: ['UNITS',     'DELIVERED'] },
+  { target: 6,    prefix: 'AED ', suffix: 'Bn', label: ['SOLD IN',  '72 HOURS']  },
+  { target: 5,    prefix: '$',  suffix: 'Bn+', label: ['TOTAL',    'ASSETS']    },
 ]
 
 function easeOut(t: number): number {
@@ -105,8 +105,6 @@ export default function Stats() {
           maxWidth: '1280px',
           margin: '0 auto',
           padding: '0 24px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '0',
         }}
         className="grid grid-cols-2 md:grid-cols-4"
@@ -121,11 +119,11 @@ export default function Stats() {
           >
             {i > 0 && (
               <div
+                className="hidden md:block"
                 style={{
                   width: '1px',
                   backgroundColor: 'rgba(201,169,110,0.2)',
                   alignSelf: 'center',
-                  margin: '0',
                   height: '40%',
                 }}
               />

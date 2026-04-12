@@ -244,21 +244,15 @@ export default function News() {
           </a>
         </div>
 
-        {/* Cards grid: featured takes 2 cols on desktop */}
+        {/* Cards grid: featured spans 2 rows on desktop, stacks on mobile */}
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr',
-            gridTemplateRows: 'auto auto',
-            gap: '24px',
-          }}
-          className="grid grid-cols-1 md:grid-cols-news"
+          style={{ gap: '24px' }}
+          className="grid grid-cols-1 md:grid-cols-news md:[grid-template-rows:auto_auto]"
         >
-          {/* Featured */}
-          <div style={{ gridRow: '1 / 3' }}>
+          {/* Featured — spans both rows on desktop */}
+          <div className="md:[grid-row:1/3]">
             <NewsCard item={NEWS_ITEMS[0]} index={0} visible={visible} />
           </div>
-          {/* Secondary cards */}
           <NewsCard item={NEWS_ITEMS[1]} index={1} visible={visible} />
           <NewsCard item={NEWS_ITEMS[2]} index={2} visible={visible} />
         </div>

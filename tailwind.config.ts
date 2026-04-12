@@ -32,6 +32,10 @@ const config: Config = {
       transitionTimingFunction: {
         smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
+      gridTemplateColumns: {
+        // 2fr left (featured news) + 1fr right (secondary cards)
+        news: '2fr 1fr',
+      },
     },
   },
   plugins: [],

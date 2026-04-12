@@ -125,12 +125,7 @@ export default function Contact() {
 
         {/* Two-column layout */}
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '80px',
-            alignItems: 'start',
-          }}
+          style={{ gap: '56px', alignItems: 'start' }}
           className="grid grid-cols-1 md:grid-cols-2"
         >
           {/* Left: offices */}
@@ -232,50 +227,57 @@ export default function Contact() {
           {/* Right: form */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
             {/* Name row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div style={{ gap: '24px' }} className="grid grid-cols-1 sm:grid-cols-2">
               <div>
-                <label style={labelStyle}>First Name</label>
+                <label htmlFor="contact-first-name" style={labelStyle}>First Name</label>
                 <input
+                  id="contact-first-name"
                   type="text"
                   value={form.firstName}
                   onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
                   onFocus={() => setFocused('firstName')}
                   onBlur={() => setFocused(null)}
                   style={inputStyle('firstName')}
+                  autoComplete="given-name"
                   required
                 />
               </div>
               <div>
-                <label style={labelStyle}>Last Name</label>
+                <label htmlFor="contact-last-name" style={labelStyle}>Last Name</label>
                 <input
+                  id="contact-last-name"
                   type="text"
                   value={form.lastName}
                   onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
                   onFocus={() => setFocused('lastName')}
                   onBlur={() => setFocused(null)}
                   style={inputStyle('lastName')}
+                  autoComplete="family-name"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label style={labelStyle}>Email Address</label>
+              <label htmlFor="contact-email" style={labelStyle}>Email Address</label>
               <input
+                id="contact-email"
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused(null)}
                 style={inputStyle('email')}
+                autoComplete="email"
                 required
               />
             </div>
 
             <div>
-              <label style={labelStyle}>Phone Number</label>
+              <label htmlFor="contact-phone" style={labelStyle}>Phone Number</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
                 <span
+                  aria-hidden="true"
                   style={{
                     fontFamily: 'var(--font-inter), system-ui, sans-serif',
                     fontSize: '14px',
@@ -290,19 +292,23 @@ export default function Contact() {
                   +971
                 </span>
                 <input
+                  id="contact-phone"
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                   onFocus={() => setFocused('phone')}
                   onBlur={() => setFocused(null)}
                   style={{ ...inputStyle('phone'), flex: 1 }}
+                  autoComplete="tel"
+                  aria-label="Phone number (UAE)"
                 />
               </div>
             </div>
 
             <div>
-              <label style={labelStyle}>Message</label>
+              <label htmlFor="contact-message" style={labelStyle}>Message</label>
               <textarea
+                id="contact-message"
                 value={form.message}
                 onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                 onFocus={() => setFocused('message')}

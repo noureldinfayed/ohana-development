@@ -58,7 +58,8 @@ export default function Partnership() {
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: '100vh',
+        height: '100vh',
+        minHeight: '600px',
         backgroundColor: '#060C18',
         display: 'flex',
         alignItems: 'center',
@@ -194,7 +195,7 @@ export default function Partnership() {
         <h2
           style={{
             fontFamily: 'var(--font-playfair), Georgia, serif',
-            fontSize: 'clamp(48px, 9vw, 110px)',
+            fontSize: 'clamp(40px, 9vw, 110px)',
             lineHeight: 0.95,
             color: '#F0E8D8',
             margin: '0 0 48px',

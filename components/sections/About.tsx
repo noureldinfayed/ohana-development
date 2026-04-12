@@ -51,9 +51,7 @@ export default function About() {
           maxWidth: '1280px',
           margin: '0 auto',
           padding: '0 24px',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '80px',
+          gap: '48px',
           alignItems: 'center',
         }}
         className="grid grid-cols-1 md:grid-cols-2"

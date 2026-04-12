@@ -60,8 +60,9 @@ export default function Projects() {
 
       const scrolled   = Math.abs(rect.top)
       const progress   = Math.max(0, Math.min(1, scrolled / scrollDist))
-      const cardW      = window.innerWidth * 0.62
-      const gap        = 32
+      const vwFraction = window.innerWidth < 768 ? 0.85 : 0.62
+      const cardW      = window.innerWidth * vwFraction
+      const gap        = window.innerWidth < 768 ? 16 : 32
       const totalTrack = (cardW + gap) * PROJECTS.length - gap - window.innerWidth
       const offset     = progress * totalTrack
 
@@ -77,8 +78,9 @@ export default function Projects() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const cardW = 62   // vw
-  const cardH = 52   // vh
+  // Responsive card sizes — JS-driven to keep scroll math in sync
+  const cardW = typeof window !== 'undefined' && window.innerWidth < 768 ? 85 : 62   // vw
+  const cardH = typeof window !== 'undefined' && window.innerWidth < 768 ? 60 : 52   // vh
 
   return (
     <section
@@ -148,9 +150,9 @@ export default function Projects() {
               ref={trackRef}
               style={{
                 display: 'flex',
-                gap: '32px',
-                paddingLeft: '24px',
-                paddingRight: '24px',
+                gap: typeof window !== 'undefined' && window.innerWidth < 768 ? '16px' : '32px',
+                paddingLeft: '16px',
+                paddingRight: '16px',
                 // willChange promotes to GPU compositing layer so translateX
                 // updates are handled entirely on the compositor thread
                 willChange: 'transform',

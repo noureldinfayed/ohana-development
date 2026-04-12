@@ -90,8 +90,6 @@ export default function Footer() {
           maxWidth: '1280px',
           margin: '0 auto',
           padding: '72px 24px 48px',
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1.5fr',
           gap: '48px',
           position: 'relative',
           zIndex: 1,
