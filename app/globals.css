@@ -117,8 +117,10 @@ body {
 
 /* ============================================================
    SECTION DEFAULTS
+   NOTE: overflow:hidden is intentionally NOT set here.
+   Setting overflow on a section/ancestor breaks position:sticky
+   on any child. Apply overflow control per-component as needed.
    ============================================================ */
 section {
   width: 100%;
-  overflow: hidden;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
 const NAV_LINKS = [
   { label: 'Projects', href: '#projects' },
@@ -13,41 +14,14 @@ const NAV_LINKS = [
 
 function OhanaLogo({ className = '' }: { className?: string }) {
   return (
-    <a href="/" className={`flex items-end gap-3 flex-shrink-0 ${className}`} aria-label="Ohana Development home">
-      {/* Skyline mark — 5 vertical gold bars of varying heights */}
-      <svg width="32" height="28" viewBox="0 0 32 28" fill="none" aria-hidden="true">
-        <rect x="0"  y="14" width="4" height="14" fill="#C9A96E" />
-        <rect x="6"  y="6"  width="4" height="22" fill="#C9A96E" />
-        <rect x="12" y="0"  width="4" height="28" fill="#C9A96E" />
-        <rect x="18" y="8"  width="4" height="20" fill="#C9A96E" />
-        <rect x="24" y="16" width="4" height="12" fill="#C9A96E" />
-      </svg>
-
-      <div className="flex flex-col leading-none">
-        <span
-          style={{
-            fontFamily: 'var(--font-playfair), Georgia, serif',
-            color: '#C9A96E',
-            fontSize: '20px',
-            letterSpacing: '0.12em',
-            fontWeight: 600,
-          }}
-        >
-          OHANA
-        </span>
-        <span
-          style={{
-            fontFamily: 'var(--font-inter), system-ui, sans-serif',
-            color: 'rgba(240,232,216,0.5)',
-            fontSize: '7.5px',
-            letterSpacing: '0.35em',
-            fontWeight: 400,
-            marginTop: '2px',
-          }}
-        >
-          DEVELOPMENT
-        </span>
-      </div>
+    <a href="/" className={`flex items-center flex-shrink-0 ${className}`} aria-label="Ohana Development home">
+      <Image
+        src="/images/ui/ohana-logo.png"
+        alt="Ohana Development"
+        width={140}
+        height={48}
+        style={{ objectFit: 'contain', objectPosition: 'left' }}
+      />
     </a>
   )
 }

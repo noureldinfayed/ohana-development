@@ -86,14 +86,16 @@ export default function Projects() {
       style={{
         backgroundColor: '#060C18',
         width: '100%',
-        overflow: 'hidden',
+        // NOTE: overflow:hidden intentionally removed — it breaks position:sticky on children.
+        // Horizontal overflow on the card track is clipped by the sticky inner div instead.
       }}
     >
-      {/* Scroll track wrapper */}
+      {/* Outer scroll track — height creates the scroll distance */}
       <div
         ref={wrapperRef}
         style={{ height: `calc(100vh + ${PROJECTS.length * 50}vw)`, position: 'relative' }}
       >
+        {/* Inner sticky — pinned to viewport while track scrolls behind it */}
         <div
           className="sticky top-0 w-full overflow-hidden"
           style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
