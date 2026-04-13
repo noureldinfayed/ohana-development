@@ -61,12 +61,25 @@ export default function RootLayout({
       style={{ overflowX: 'hidden' }}
     >
       {/*
-       * Preload the full-res first frame so the canvas has it cached when it
-       * starts drawing. LCP itself is handled by the server-rendered priority
-       * <Image> in page.tsx (Next.js serves a compressed device-sized version).
-       * Using fetchPriority="low" so the optimised LCP image wins the bandwidth race.
+       * Two-tier hero preload strategy:
+       *
+       * 1. 0001-preview.webp (48 KB, 720×405) — HIGH priority.
+       *    The canvas uses this for its first draw so it's visible ~1.5 s on
+       *    slow 4G (48 KB ÷ 187.5 KB/s ≈ 0.3 s download, cache-hit on JS load).
+       *    This becomes the LCP element.
+       *
+       * 2. 0001.webp (556 KB, 1920×1080) — LOW priority.
+       *    The canvas swaps to full-res once the preview is painted; starts
+       *    downloading in parallel but doesn't compete for LCP bandwidth.
        */}
       <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/images/hero-sequence/0001-preview.webp"
+          type="image/webp"
+          fetchPriority="high"
+        />
         <link
           rel="preload"
           as="image"

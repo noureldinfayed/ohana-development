@@ -14,6 +14,10 @@ const TOTAL_FRAMES = 120
 const FRAME_PATH = (n: number) =>
   `/images/hero-sequence/${String(n).padStart(4, '0')}.webp`
 
+// Small preview specifically preloaded for the initial LCP-paint (~48 KB).
+// The canvas draws this first, then swaps to the full-res once it's ready.
+const PREVIEW_PATH = '/images/hero-sequence/0001-preview.webp'
+
 // ─── LOADING SCREEN ───────────────────────────────────────────────────────
 function LoadingScreen({ progress }: { progress: number }) {
   return (
@@ -441,11 +445,17 @@ export default function HeroJourney() {
   }, [drawFrame])
 
   // ── Lazy frame loading — LCP & bandwidth optimisation ──────────────────────
-  // Strategy: only load frame 0 eagerly (it was preloaded in <head> via
-  // rel="preload" so it's already in browser cache → near-instant).
-  // All other frames are loaded on-demand as the user scrolls, 20 frames
-  // ahead of the current position. This reduces the initial page weight from
-  // 30 MB to ~250 KB, letting the page reach LCP in ~1.5 s on slow 4G.
+  // Strategy (two-tier for mobile LCP):
+  //
+  //  Tier 1 — preview (48 KB, preloaded at high priority):
+  //    Draw this immediately so LCP is registered at ~1.5 s on slow 4G.
+  //    The preview is 720×405 and scales fine to full-screen.
+  //
+  //  Tier 2 — full-res frame 0 (556 KB, preloaded at low priority):
+  //    Load and redraw frame 0 once it's ready. Canvas quality improves
+  //    silently behind the loading overlay — user never sees the swap.
+  //
+  //  All other frames are loaded on-demand with a 20-frame lookahead.
   useEffect(() => {
     // Allocate slots without setting .src — no network requests yet
     const images: HTMLImageElement[] = Array.from(
@@ -454,11 +464,27 @@ export default function HeroJourney() {
     )
     imagesRef.current = images
 
-    // Frame 0: already preloaded by <head> hint; set src to pull from cache
-    const first = images[0]
-    first.onload  = () => { setImagesLoaded(true); drawFrame(0) }
-    first.onerror = () => { setImagesLoaded(true) }
-    first.src = FRAME_PATH(1)   // browser cache hit — instant
+    // Tier 1: preview is already in cache from <head> preload — draw instantly
+    const preview = new Image()
+    preview.onload = () => {
+      setImagesLoaded(true)
+      drawFrame(0)    // draw preview into slot 0
+      // Tier 2: swap to full-res frame 0 once the large download is done
+      const first = images[0]
+      first.onload = () => drawFrame(0)  // silent quality upgrade
+      first.src = FRAME_PATH(1)           // already preloading in background
+    }
+    preview.onerror = () => {
+      // Fallback: skip preview, load full-res directly
+      const first = images[0]
+      first.onload  = () => { setImagesLoaded(true); drawFrame(0) }
+      first.onerror = () => setImagesLoaded(true)
+      first.src = FRAME_PATH(1)
+    }
+    // Point slot 0 at the preview so drawFrame(0) reads it correctly
+    images[0] = preview
+    imagesRef.current = images
+    preview.src = PREVIEW_PATH   // cache hit on mobile (preloaded in <head>)
 
     return () => { cancelAnimationFrame(rafRef.current) }
   }, [drawFrame])
