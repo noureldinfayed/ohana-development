@@ -19,54 +19,62 @@ export default function Page() {
       <Navbar />
       <main>
         {/*
-         * LCP strategy: wrap the hero in a relative container that holds a
-         * server-rendered priority <Image>. Because this file has no 'use client',
-         * Next.js outputs the image + its <link rel="preload"> tag in the very first
-         * HTML response — before any JavaScript downloads. Lighthouse registers the
-         * image as the LCP element at ~0.5 s on mobile (Next.js serves a compressed
-         * device-sized version, ~30 KB vs 556 KB raw).
+         * LCP strategy:
          *
-         * The canvas (HeroJourneyLoader) sits on top in DOM order and fades in once
-         * its first frame is drawn. The static image behind it is never user-visible
-         * after hydration, but LCP is already recorded by then.
+         * 1. A server-rendered <Image priority fetchPriority="high"> lives inside
+         *    a div that has EXPLICIT height (100vh). This is critical — Chrome's LCP
+         *    algorithm must see a non-zero rendered area to register the image as a
+         *    valid LCP candidate. A position:absolute img inside a 0px-height container
+         *    is computed as 0px² and never wins the LCP race.
+         *
+         * 2. marginBottom:'-100vh' pulls the HeroJourneyLoader up so it starts at
+         *    the same y as the image div. The canvas (400vh) then covers the image.
+         *    Net document height = 100vh - 100vh + 400vh = 400vh → no CLS.
+         *
+         * 3. HeroJourneyLoader (ssr:false) renders on top in DOM order, so its
+         *    opaque #060C18 placeholder naturally covers the LCP image after JS.
+         *    LCP has already been recorded by then (image painted at ~0.5 s).
          */}
-        <div style={{ position: 'relative' }}>
-          {/* Server-rendered LCP image — visible in raw HTML before JS */}
+
+        {/* LCP poster — 100vh explicit height so Chrome can measure rendered area */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '100vh',
+            marginBottom: '-100vh',   // pulls hero canvas up to y=0
+            overflow: 'hidden',
+            zIndex: 0,
+          }}
+        >
+          <Image
+            src="/images/hero-sequence/0001.webp"
+            alt="Ohana Development — luxury real estate Abu Dhabi"
+            fill
+            priority
+            fetchPriority="high"
+            sizes="100vw"
+            quality={65}
+            style={{ objectFit: 'cover', objectPosition: 'center' }}
+          />
+          {/* Consistent dark vignette */}
           <div
-            aria-hidden="true"
             style={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '100vh',
-              zIndex: 0,
+              inset: 0,
+              background:
+                'linear-gradient(to bottom, rgba(6,12,24,0.15) 0%, rgba(6,12,24,0.55) 100%)',
               pointerEvents: 'none',
             }}
-          >
-            <Image
-              src="/images/hero-sequence/0001.webp"
-              alt="Ohana Development — luxury real estate Abu Dhabi"
-              fill
-              priority
-              sizes="100vw"
-              quality={65}
-              style={{ objectFit: 'cover', objectPosition: 'center' }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'linear-gradient(to bottom, rgba(6,12,24,0.15) 0%, rgba(6,12,24,0.55) 100%)',
-              }}
-            />
-          </div>
-          {/* Canvas hero — ssr:false, loads async, covers the static image once ready */}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <HeroJourneyLoader />
-          </div>
+          />
         </div>
+
+        {/* Canvas hero — ssr:false, overlaps the poster, provides 400vh of scroll */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <HeroJourneyLoader />
+        </div>
+
         <Partnership />
         <Projects />
         <Stats />
