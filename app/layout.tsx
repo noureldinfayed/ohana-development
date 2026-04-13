@@ -61,9 +61,10 @@ export default function RootLayout({
       style={{ overflowX: 'hidden' }}
     >
       {/*
-       * Preload the first hero canvas frame so the browser fetches it before
-       * JavaScript even parses. This cuts the LCP-blocking download from 3.8s
-       * to ~1.5s on slow 4G (frame 0 ≈ 250 KB at 200 KB/s + 0.3s TTFB).
+       * The <Image priority> in HeroJourneyLoader handles the LCP preload
+       * automatically via Next.js image optimisation (device-aware sizing).
+       * We still preload the full-res original so the canvas animation has it
+       * in the browser cache when it eventually requests it.
        */}
       <head>
         <link
@@ -71,6 +72,7 @@ export default function RootLayout({
           as="image"
           href="/images/hero-sequence/0001.webp"
           type="image/webp"
+          fetchPriority="low"
         />
       </head>
       {/*
