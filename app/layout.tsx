@@ -61,6 +61,19 @@ export default function RootLayout({
       style={{ overflowX: 'hidden' }}
     >
       {/*
+       * Preload the first hero canvas frame so the browser fetches it before
+       * JavaScript even parses. This cuts the LCP-blocking download from 3.8s
+       * to ~1.5s on slow 4G (frame 0 ≈ 250 KB at 200 KB/s + 0.3s TTFB).
+       */}
+      <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/images/hero-sequence/0001.webp"
+          type="image/webp"
+        />
+      </head>
+      {/*
        * CRITICAL: body must NOT have overflow-x:hidden — that creates a BFC
        * scroll container, breaking position:sticky on all children.
        * overflow-x:clip achieves the same visual clipping without a BFC.
