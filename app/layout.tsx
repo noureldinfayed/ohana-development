@@ -61,10 +61,10 @@ export default function RootLayout({
       style={{ overflowX: 'hidden' }}
     >
       {/*
-       * The <Image priority> in HeroJourneyLoader handles the LCP preload
-       * automatically via Next.js image optimisation (device-aware sizing).
-       * We still preload the full-res original so the canvas animation has it
-       * in the browser cache when it eventually requests it.
+       * Preload the full-res first frame so the canvas has it cached when it
+       * starts drawing. LCP itself is handled by the server-rendered priority
+       * <Image> in page.tsx (Next.js serves a compressed device-sized version).
+       * Using fetchPriority="low" so the optimised LCP image wins the bandwidth race.
        */}
       <head>
         <link
