@@ -21,6 +21,8 @@ function OhanaLogo({ className = '' }: { className?: string }) {
         alt="Ohana Development"
         width={140}
         height={48}
+        priority
+        fetchPriority="high"
         style={{ objectFit: 'contain', objectPosition: 'left' }}
       />
     </a>
@@ -28,16 +30,11 @@ function OhanaLogo({ className = '' }: { className?: string }) {
 }
 
 export default function Navbar() {
-  const [scrolled, setScrolled]     = useState(false)
-  const [menuOpen, setMenuOpen]     = useState(false)
-  const [scrollY, setScrollY]       = useState(0)
+  const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      setScrollY(y)
-      setScrolled(y > 80)
-    }
+    const onScroll = () => setScrolled(window.scrollY > 80)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])

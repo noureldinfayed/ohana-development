@@ -17,14 +17,7 @@ const HeroJourney = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div
-        style={{
-          width: '100%',
-          height: '400vh',
-          backgroundColor: '#060C18',
-          position: 'relative',
-        }}
-      />
+      <div style={{ width: '100%', height: '400vh', position: 'relative' }} />
     ),
   }
 )

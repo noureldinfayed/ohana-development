@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import {
   useMotionValue,
   useTransform,
@@ -10,11 +10,12 @@ import {
 
 // ─── CONFIGURABLE CONSTANTS ───────────────────────────────────────────────
 const TOTAL_FRAMES = 120
-const FIRST_CHUNK  = 30   // frames decoded before scroll unlocks
 const FRAME_PATH = (n: number) =>
   `/images/hero-sequence/${String(n).padStart(4, '0')}.webp`
 
 // ─── LOADING SCREEN ───────────────────────────────────────────────────────
+// Shows the preview image as background so there is NO dark flash between
+// the SSR <img> (LCP candidate) and the canvas being ready — LCP stays painted.
 function LoadingScreen({ progress }: { progress: number }) {
   return (
     <div
@@ -22,7 +23,6 @@ function LoadingScreen({ progress }: { progress: number }) {
         position: 'fixed',
         inset: 0,
         zIndex: 500,
-        backgroundColor: '#060C18',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -30,6 +30,20 @@ function LoadingScreen({ progress }: { progress: number }) {
         gap: '32px',
       }}
     >
+      {/* Same preview image as the SSR LCP image — no visible flash */}
+      <img
+        src="/images/hero-sequence/0001-preview.webp"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%', objectFit: 'cover',
+        }}
+      />
+      {/* Dark overlay keeps the loading UI readable */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(6,12,24,0.72)' }} />
+      {/* Content sits above both the image and the overlay */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px' }}>
       <svg width="48" height="42" viewBox="0 0 48 42" fill="none" aria-hidden="true">
         <rect x="0"  y="21" width="6" height="21" fill="#C9A96E" opacity="0.6" />
         <rect x="9"  y="9"  width="6" height="33" fill="#C9A96E" opacity="0.8" />
@@ -83,6 +97,7 @@ function LoadingScreen({ progress }: { progress: number }) {
           }}
         />
       </div>
+      </div>{/* end z-index:1 content wrapper */}
     </div>
   )
 }
@@ -381,8 +396,8 @@ export default function HeroJourney() {
   const pendingFrameRef = useRef<number>(-1)
   const rafScheduledRef = useRef(false)
   const loadedSetRef    = useRef<Set<number>>(new Set<number>())
-
-  const [imagesLoaded, setImagesLoaded] = useState(false)
+  // Cached scroll distance — updated by ResizeObserver, never read inside scroll handler
+  const scrollDistRef   = useRef(0)
 
   // Manual MotionValue — driven directly from window scroll, not framer's useScroll
   const scrollProgress = useMotionValue(0)
@@ -400,50 +415,56 @@ export default function HeroJourney() {
     ctx.drawImage(img, x, y, img.naturalWidth * scale, img.naturalHeight * scale)
   }, [])
 
-  // Canvas resize — re-draw after resize
+  // Canvas resize + cache scrollDist — ResizeObserver handles both so scroll handler
+  // never needs to read offsetHeight (forced reflow)
   useEffect(() => {
-    const resize = () => {
+    const update = () => {
       const canvas = canvasRef.current
-      if (!canvas) return
-      canvas.width  = window.innerWidth
-      canvas.height = window.innerHeight
-      drawFrame(currentFrameRef.current)
+      if (canvas) {
+        canvas.width  = window.innerWidth
+        canvas.height = window.innerHeight
+        drawFrame(currentFrameRef.current)
+      }
+      if (containerRef.current) {
+        scrollDistRef.current = containerRef.current.offsetHeight - window.innerHeight
+      }
     }
-    resize()
-    window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
+    update()
+    const ro = new ResizeObserver(update)
+    if (containerRef.current) ro.observe(containerRef.current)
+    return () => ro.disconnect()
   }, [drawFrame])
 
-  // Chunk loading: decode first 30 frames before unlocking scroll,
-  // then background-load frames 31–120
+  // Non-blocking frame load: draw preview from cache immediately, upgrade silently,
+  // remaining frames loaded on-demand by scroll lookahead — no loading screen needed.
   useEffect(() => {
     const images: HTMLImageElement[] = Array.from({ length: TOTAL_FRAMES }, () => new Image())
     imagesRef.current = images
     const loaded = loadedSetRef.current
 
-    for (let i = 0; i < FIRST_CHUNK; i++) {
-      images[i].src = FRAME_PATH(i + 1)
-      loaded.add(i)
-    }
-
-    ;(async () => {
-      try {
-        await Promise.all(images.slice(0, FIRST_CHUNK).map(img => img.decode()))
-      } catch { /* proceed even if some frames fail to decode */ }
-
-      setImagesLoaded(true)
+    // Tier 1: preview is already in cache (preloaded in <head>) — draw immediately
+    const preview = new Image()
+    preview.onload = () => {
+      images[0] = preview
+      imagesRef.current = images
+      loaded.add(0)
       drawFrame(0)
+    }
+    preview.src = '/images/hero-sequence/0001-preview.webp'
 
-      // Background-load remaining frames without blocking the main thread
-      for (let i = FIRST_CHUNK; i < TOTAL_FRAMES; i++) {
-        if (!loaded.has(i)) {
-          images[i].src = FRAME_PATH(i + 1)
-          loaded.add(i)
-        }
+    // Tier 2: full-res frame 1 — delay 2s so LCP preview has clear bandwidth first
+    const fullTimer = setTimeout(() => {
+      const full = new Image()
+      full.onload = () => {
+        images[0] = full
+        imagesRef.current = images
+        drawFrame(0)
       }
-    })()
+      full.src = FRAME_PATH(1)
+    }, 2000)
+    loaded.add(0)
 
-    return () => { cancelAnimationFrame(rafRef.current) }
+    return () => { cancelAnimationFrame(rafRef.current); clearTimeout(fullTimer) }
   }, [drawFrame])
 
   // Direct window scroll listener → rAF flag pattern for buttery canvas draws
@@ -455,9 +476,9 @@ export default function HeroJourney() {
       drawFrame(index)
       currentFrameRef.current = index
 
-      // Lazy-load 20-frame lookahead so frames are ready before user reaches them
+      // Lazy-load 5-frame lookahead so frames are ready before user reaches them
       const loaded = loadedSetRef.current
-      const end    = Math.min(index + 20, TOTAL_FRAMES - 1)
+      const end    = Math.min(index + 5, TOTAL_FRAMES - 1)
       for (let i = index; i <= end; i++) {
         if (!loaded.has(i)) {
           loaded.add(i)
@@ -467,8 +488,7 @@ export default function HeroJourney() {
     }
 
     const onScroll = () => {
-      if (!containerRef.current) return
-      const scrollDist = containerRef.current.offsetHeight - window.innerHeight
+      const scrollDist = scrollDistRef.current
       if (scrollDist <= 0) return
 
       // Compute progress directly from window.scrollY — starts at 0 immediately
@@ -497,9 +517,6 @@ export default function HeroJourney() {
 
   return (
     <>
-      {/* Loading overlay — hidden once first chunk is decoded */}
-      {!imagesLoaded && <LoadingScreen progress={0} />}
-
       {/* Fixed UI — driven by MotionValues, zero re-renders */}
       <ScrollDots  scrollYProgress={scrollProgress} />
       <ScrollHint  scrollYProgress={scrollProgress} />

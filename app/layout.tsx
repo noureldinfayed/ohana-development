@@ -80,13 +80,6 @@ export default function RootLayout({
           type="image/webp"
           fetchPriority="high"
         />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/hero-sequence/0001.webp"
-          type="image/webp"
-          fetchPriority="low"
-        />
       </head>
       {/*
        * CRITICAL: body must NOT have overflow-x:hidden — that creates a BFC
@@ -104,7 +97,8 @@ export default function RootLayout({
         }}
       >
         <LenisProvider>{children}</LenisProvider>
-        <Analytics />
+        {/* Only load Vercel Analytics on the Vercel platform — avoids 404 console error locally */}
+        {process.env.VERCEL && <Analytics />}
       </body>
     </html>
   )

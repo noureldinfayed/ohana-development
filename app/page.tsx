@@ -17,7 +17,29 @@ export default function Page() {
       {/* Disable native scroll-memory so page always starts at top */}
       <ScrollRestoration />
       <Navbar />
-      <main>
+      <main style={{ position: 'relative' }}>
+        {/* SSR priority LCP image — in HTML before any JS runs.
+            The canvas layers on top once loaded (translateZ(0) stacking context + later DOM order). */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0, left: 0,
+            width: '100%', height: '100vh',
+            overflow: 'hidden',
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src="/images/hero-sequence/0001-preview.webp"
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%', objectFit: 'cover',
+            }}
+          />
+        </div>
         <HeroJourneyLoader />
         <Partnership />
         <Projects />
