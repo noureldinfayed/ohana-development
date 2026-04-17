@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 
 const NAV_LINKS = [
-  { label: 'Projects', href: '#projects' },
-  { label: 'About',    href: '#about' },
-  { label: 'Values',   href: '#values' },
-  { label: 'News',     href: '#news' },
-  { label: 'Contact',  href: '#contact' },
+  { label: 'Projects',   href: '#projects' },
+  { label: 'About',      href: '#about' },
+  { label: 'Values',     href: '#values' },
+  { label: 'News',       href: '#news' },
+  { label: 'AI Advisor', href: '#advisor' },
+  { label: 'Contact',    href: '#contact' },
 ]
 
 function OhanaLogo({ className = '' }: { className?: string }) {

@@ -41,7 +41,9 @@ export default function Partnership() {
       if (!el || !clip) return
       const rect     = el.getBoundingClientRect()
       const viewH    = window.innerHeight
-      const progress = Math.max(0, Math.min(1, (viewH - rect.top) / (viewH + rect.height)))
+      // Start iris when hero is ~70% scrolled (section is ~1.8 viewports below fold)
+      const earlyStart = viewH * 1.8
+      const progress = Math.max(0, Math.min(1, (earlyStart - rect.top) / (earlyStart + rect.height)))
       const radius   = Math.min(progress * 180, 130)
       // Direct DOM mutation — zero React re-renders on scroll
       clip.style.clipPath = `circle(${radius}% at 50% 50%)`

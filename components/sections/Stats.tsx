@@ -10,10 +10,10 @@ interface StatItem {
 }
 
 const STATS: StatItem[] = [
-  { target: 35,   prefix: '',  suffix: '+',   label: ['YEARS OF',  'LEGACY']    },
-  { target: 9000, prefix: '',  suffix: '+',   label: ['UNITS',     'DELIVERED'] },
-  { target: 6,    prefix: 'AED ', suffix: 'Bn', label: ['SOLD IN',  '72 HOURS']  },
-  { target: 5,    prefix: '$',  suffix: 'Bn+', label: ['TOTAL',    'ASSETS']    },
+  { target: 35,   prefix: '',     suffix: '+',    label: ['YEARS OF',   'LEGACY']       },
+  { target: 10,   prefix: '',     suffix: 'M+',   label: ['SQ FT',      'MASTERPLAN']   },
+  { target: 6,    prefix: 'AED ', suffix: 'Bn',   label: ['SOLD IN',    '72 HOURS']     },
+  { target: 20,   prefix: 'AED ', suffix: 'Bn+',  label: ['ACTIVE',     'PORTFOLIO']    },
 ]
 
 function easeOut(t: number): number {

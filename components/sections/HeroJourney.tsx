@@ -2,21 +2,17 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import {
-  useScroll,
+  useMotionValue,
   useTransform,
-  useMotionValueEvent,
   motion,
   type MotionValue,
 } from 'framer-motion'
 
-// ─── CONFIGURABLE CONSTANT ────────────────────────────────────────────────
+// ─── CONFIGURABLE CONSTANTS ───────────────────────────────────────────────
 const TOTAL_FRAMES = 120
+const FIRST_CHUNK  = 30   // frames decoded before scroll unlocks
 const FRAME_PATH = (n: number) =>
   `/images/hero-sequence/${String(n).padStart(4, '0')}.webp`
-
-// Small preview specifically preloaded for the initial LCP-paint (~48 KB).
-// The canvas draws this first, then swaps to the full-res once it's ready.
-const PREVIEW_PATH = '/images/hero-sequence/0001-preview.webp'
 
 // ─── LOADING SCREEN ───────────────────────────────────────────────────────
 function LoadingScreen({ progress }: { progress: number }) {
@@ -132,7 +128,6 @@ function ScrollDot({
   low: number
   high: number
 }) {
-  // useTransform with a function — returns MotionValue, no setState, no re-render
   const width = useTransform(scrollYProgress, (v) =>
     v >= low && v < high ? '24px' : '6px'
   )
@@ -155,7 +150,6 @@ function ScrollDot({
 }
 
 // ─── SCROLL HINT ──────────────────────────────────────────────────────────
-// Fades out at 10% scroll — driven by MotionValue, no state
 function ScrollHint({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
   const opacity = useTransform(scrollYProgress, [0, 0.05, 0.12], [1, 1, 0])
 
@@ -210,7 +204,6 @@ function HeroTextOverlay({
 }: {
   scrollYProgress: MotionValue<number>
 }) {
-  // Text fades in 0→20%, holds, fades out 88→96% (much later than before)
   const textOpacity = useTransform(
     scrollYProgress,
     [0.06, 0.18, 0.88, 0.96],
@@ -218,10 +211,8 @@ function HeroTextOverlay({
   )
   const textY = useTransform(scrollYProgress, [0.06, 0.2], ['32px', '0px'])
 
-  // Eyebrow a beat ahead of the headline
   const eyebrowOpacity = useTransform(scrollYProgress, [0.04, 0.14], [0, 1])
 
-  // CTA fades in at 65%, stays fully visible right through to the end
   const ctaOpacity = useTransform(scrollYProgress, [0.62, 0.74], [0, 1])
 
   return (
@@ -261,7 +252,6 @@ function HeroTextOverlay({
         }}
       />
 
-      {/* Main text — motion.div driven by MotionValues */}
       <motion.div
         style={{
           position: 'relative',
@@ -318,7 +308,6 @@ function HeroTextOverlay({
             fontFamily: 'var(--font-cormorant), Georgia, serif',
             fontSize: '22px',
             fontStyle: 'italic',
-            // brighter than before — was 0.55 opacity
             color: 'rgba(240,232,216,0.78)',
             lineHeight: 1.45,
           }}
@@ -327,7 +316,7 @@ function HeroTextOverlay({
         </p>
       </motion.div>
 
-      {/* CTA block — appears at ~65% and stays until section end */}
+      {/* CTA — appears at ~65%, stays until section end */}
       <motion.div
         style={{
           position: 'absolute',
@@ -370,7 +359,6 @@ function HeroTextOverlay({
         >
           Discover Our Projects
         </a>
-        {/* Subtle scroll-down nudge below CTA */}
         <div
           style={{
             width: '1px',
@@ -385,52 +373,34 @@ function HeroTextOverlay({
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────
 export default function HeroJourney() {
-  // ── Refs (never cause re-renders) ───────────────────────────────────────
   const containerRef    = useRef<HTMLDivElement>(null)
   const canvasRef       = useRef<HTMLCanvasElement>(null)
   const imagesRef       = useRef<HTMLImageElement[]>([])
   const currentFrameRef = useRef(0)
   const rafRef          = useRef<number>(0)
+  const pendingFrameRef = useRef<number>(-1)
+  const rafScheduledRef = useRef(false)
+  const loadedSetRef    = useRef<Set<number>>(new Set<number>())
 
-  // ── State — only for the loading phase, never touched during scroll ─────
   const [imagesLoaded, setImagesLoaded] = useState(false)
-  // loadProgress removed — we no longer track all-frame loading (lazy load)
 
-  // ── Framer Motion scroll tracking ───────────────────────────────────────
-  // offset: ["start start", "end end"] means:
-  //   0 → element top  aligns with viewport top  (sticky begins, frame 0)
-  //   1 → element bottom aligns with viewport bottom (sticky ends, last frame)
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  })
+  // Manual MotionValue — driven directly from window scroll, not framer's useScroll
+  const scrollProgress = useMotionValue(0)
 
-  // ── Direct RAF draw — one requestAnimationFrame per scroll event ─────────
-  // Frame index is strictly bounded [0, TOTAL_FRAMES-1] so it can never
-  // reference an out-of-bounds slot, and cover-scaling fills the canvas
-  // regardless of aspect ratio.
+  // Synchronous cover-scaled draw — called only from within rAF callbacks
   const drawFrame = useCallback((index: number) => {
     const canvas = canvasRef.current
     const ctx    = canvas?.getContext('2d')
     const img    = imagesRef.current[index]
     if (!ctx || !canvas || !img?.complete || !img.naturalWidth) return
-
-    rafRef.current = requestAnimationFrame(() => {
-      // Re-read canvas/ctx inside the RAF in case the component unmounted
-      const c2 = canvasRef.current
-      const c2ctx = c2?.getContext('2d')
-      const i2 = imagesRef.current[index]
-      if (!c2ctx || !c2 || !i2?.complete || !i2.naturalWidth) return
-
-      const scale = Math.max(c2.width / i2.naturalWidth, c2.height / i2.naturalHeight)
-      const x = (c2.width  - i2.naturalWidth  * scale) / 2
-      const y = (c2.height - i2.naturalHeight * scale) / 2
-      c2ctx.clearRect(0, 0, c2.width, c2.height)
-      c2ctx.drawImage(i2, x, y, i2.naturalWidth * scale, i2.naturalHeight * scale)
-    })
+    const scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight)
+    const x = (canvas.width  - img.naturalWidth  * scale) / 2
+    const y = (canvas.height - img.naturalHeight * scale) / 2
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(img, x, y, img.naturalWidth * scale, img.naturalHeight * scale)
   }, [])
 
-  // ── Canvas resize — must re-draw after resize ────────────────────────────
+  // Canvas resize — re-draw after resize
   useEffect(() => {
     const resize = () => {
       const canvas = canvasRef.current
@@ -444,95 +414,103 @@ export default function HeroJourney() {
     return () => window.removeEventListener('resize', resize)
   }, [drawFrame])
 
-  // ── Lazy frame loading — LCP & bandwidth optimisation ──────────────────────
-  // Strategy (two-tier for mobile LCP):
-  //
-  //  Tier 1 — preview (48 KB, preloaded at high priority):
-  //    Draw this immediately so LCP is registered at ~1.5 s on slow 4G.
-  //    The preview is 720×405 and scales fine to full-screen.
-  //
-  //  Tier 2 — full-res frame 0 (556 KB, preloaded at low priority):
-  //    Load and redraw frame 0 once it's ready. Canvas quality improves
-  //    silently behind the loading overlay — user never sees the swap.
-  //
-  //  All other frames are loaded on-demand with a 20-frame lookahead.
+  // Chunk loading: decode first 30 frames before unlocking scroll,
+  // then background-load frames 31–120
   useEffect(() => {
-    // Allocate slots without setting .src — no network requests yet
-    const images: HTMLImageElement[] = Array.from(
-      { length: TOTAL_FRAMES },
-      () => new Image()
-    )
+    const images: HTMLImageElement[] = Array.from({ length: TOTAL_FRAMES }, () => new Image())
     imagesRef.current = images
+    const loaded = loadedSetRef.current
 
-    // Tier 1: preview is already in cache from <head> preload — draw instantly
-    const preview = new Image()
-    preview.onload = () => {
+    for (let i = 0; i < FIRST_CHUNK; i++) {
+      images[i].src = FRAME_PATH(i + 1)
+      loaded.add(i)
+    }
+
+    ;(async () => {
+      try {
+        await Promise.all(images.slice(0, FIRST_CHUNK).map(img => img.decode()))
+      } catch { /* proceed even if some frames fail to decode */ }
+
       setImagesLoaded(true)
-      drawFrame(0)    // draw preview into slot 0
-      // Tier 2: swap to full-res frame 0 once the large download is done
-      const first = images[0]
-      first.onload = () => drawFrame(0)  // silent quality upgrade
-      first.src = FRAME_PATH(1)           // already preloading in background
-    }
-    preview.onerror = () => {
-      // Fallback: skip preview, load full-res directly
-      const first = images[0]
-      first.onload  = () => { setImagesLoaded(true); drawFrame(0) }
-      first.onerror = () => setImagesLoaded(true)
-      first.src = FRAME_PATH(1)
-    }
-    // Point slot 0 at the preview so drawFrame(0) reads it correctly
-    images[0] = preview
-    imagesRef.current = images
-    preview.src = PREVIEW_PATH   // cache hit on mobile (preloaded in <head>)
+      drawFrame(0)
+
+      // Background-load remaining frames without blocking the main thread
+      for (let i = FIRST_CHUNK; i < TOTAL_FRAMES; i++) {
+        if (!loaded.has(i)) {
+          images[i].src = FRAME_PATH(i + 1)
+          loaded.add(i)
+        }
+      }
+    })()
 
     return () => { cancelAnimationFrame(rafRef.current) }
   }, [drawFrame])
 
-  // ── Load frames on demand as user scrolls (20-frame lookahead) ───────────
-  const loadedSetRef = useRef<Set<number>>(new Set([0]))
+  // Direct window scroll listener → rAF flag pattern for buttery canvas draws
+  useEffect(() => {
+    const rafDraw = () => {
+      rafScheduledRef.current = false
+      const index = pendingFrameRef.current
+      if (index < 0) return
+      drawFrame(index)
+      currentFrameRef.current = index
 
-  // ── Scroll → canvas + lazy frame loader ──────────────────────────────────
-  useMotionValueEvent(scrollYProgress, 'change', (latest) => {
-    if (!canvasRef.current || !imagesRef.current.length) return
-
-    const frameIndex = Math.max(
-      0,
-      Math.min(TOTAL_FRAMES - 1, Math.floor(latest * TOTAL_FRAMES))
-    )
-    currentFrameRef.current = frameIndex
-    drawFrame(frameIndex)
-
-    // Lazy-load the next 20 frames so they're ready before the user reaches them
-    const LOOKAHEAD = 20
-    const loaded = loadedSetRef.current
-    for (let i = frameIndex; i <= Math.min(frameIndex + LOOKAHEAD, TOTAL_FRAMES - 1); i++) {
-      if (!loaded.has(i)) {
-        loaded.add(i)
-        imagesRef.current[i].src = FRAME_PATH(i + 1)
+      // Lazy-load 20-frame lookahead so frames are ready before user reaches them
+      const loaded = loadedSetRef.current
+      const end    = Math.min(index + 20, TOTAL_FRAMES - 1)
+      for (let i = index; i <= end; i++) {
+        if (!loaded.has(i)) {
+          loaded.add(i)
+          imagesRef.current[i].src = FRAME_PATH(i + 1)
+        }
       }
     }
-  })
+
+    const onScroll = () => {
+      if (!containerRef.current) return
+      const scrollDist = containerRef.current.offsetHeight - window.innerHeight
+      if (scrollDist <= 0) return
+
+      // Compute progress directly from window.scrollY — starts at 0 immediately
+      const progress = Math.min(1, Math.max(0, window.scrollY / scrollDist))
+      scrollProgress.set(progress)
+
+      pendingFrameRef.current = Math.min(
+        TOTAL_FRAMES - 1,
+        Math.floor(progress * TOTAL_FRAMES)
+      )
+
+      // Schedule one rAF per scroll event — never draw inside the scroll handler
+      if (!rafScheduledRef.current) {
+        rafScheduledRef.current = true
+        rafRef.current = requestAnimationFrame(rafDraw)
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll() // set initial state at scrollY=0
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(rafRef.current)
+    }
+  }, [drawFrame, scrollProgress])
 
   return (
     <>
-      {/* Loading overlay — only visible before frames are ready */}
+      {/* Loading overlay — hidden once first chunk is decoded */}
       {!imagesLoaded && <LoadingScreen progress={0} />}
 
       {/* Fixed UI — driven by MotionValues, zero re-renders */}
-      <ScrollDots  scrollYProgress={scrollYProgress} />
-      <ScrollHint  scrollYProgress={scrollYProgress} />
+      <ScrollDots  scrollYProgress={scrollProgress} />
+      <ScrollHint  scrollYProgress={scrollProgress} />
 
-      {/* ── OUTER TRACK: creates the scroll distance (400vh) ── */}
+      {/* ── OUTER TRACK: creates 400vh scroll distance ── */}
       <div
         ref={containerRef}
         style={{ position: 'relative', width: '100%', height: '400vh' }}
       >
-        {/* ── INNER STICKY: stays pinned to viewport while track scrolls ── */}
-        <div
-          className="sticky top-0 h-screen w-full overflow-hidden"
-        >
-          {/* Canvas — drawn directly via RAF, never via React */}
+        {/* ── INNER STICKY: pins to viewport, animation starts at scrollY=0 ── */}
+        <div className="sticky top-0 h-screen w-full overflow-hidden">
           <canvas
             ref={canvasRef}
             style={{
@@ -541,11 +519,11 @@ export default function HeroJourney() {
               display: 'block',
               width: '100%',
               height: '100%',
+              willChange: 'transform',
+              transform: 'translateZ(0)',
             }}
           />
-
-          {/* Text overlays — all driven by MotionValues */}
-          <HeroTextOverlay scrollYProgress={scrollYProgress} />
+          <HeroTextOverlay scrollYProgress={scrollProgress} />
         </div>
       </div>
     </>

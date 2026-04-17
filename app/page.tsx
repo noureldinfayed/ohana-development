@@ -8,6 +8,7 @@ import About              from '@/components/sections/About'
 import Values             from '@/components/sections/Values'
 import News               from '@/components/sections/News'
 import Contact            from '@/components/sections/Contact'
+import InvestmentAdvisor  from '@/components/sections/InvestmentAdvisor'
 import ScrollRestoration  from '@/components/ui/ScrollRestoration'
 
 export default function Page() {
@@ -20,6 +21,7 @@ export default function Page() {
         <HeroJourneyLoader />
         <Partnership />
         <Projects />
+        <InvestmentAdvisor />
         <Stats />
         <About />
         <Values />
