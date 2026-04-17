@@ -41,7 +41,7 @@ export default function InvestmentAdvisor() {
       ref={ref}
       id="advisor"
       style={{
-        background: '#060E1C',
+        background: '#060C18',
         padding: 'clamp(80px,10vw,140px) clamp(24px,5vw,80px)',
         borderTop: '1px solid rgba(201,165,90,0.12)',
       }}
