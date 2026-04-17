@@ -27,13 +27,9 @@ function AnimatedCounter({ target, prefix, suffix, delay }: {
   delay: number
 }) {
   const [count, setCount] = useState(0)
-  const [started, setStarted] = useState(false)
   const rafRef = useRef<number>(0)
 
-  const start = () => {
-    if (started) return
-    setStarted(true)
-
+  useEffect(() => {
     const duration = 2000
     const startTime = performance.now() + delay * 1000
 
@@ -44,25 +40,15 @@ function AnimatedCounter({ target, prefix, suffix, delay }: {
       }
       const elapsed  = now - startTime
       const progress = Math.min(elapsed / duration, 1)
-      const easedVal = easeOut(progress)
-      setCount(Math.round(easedVal * target))
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(animate)
-      }
+      setCount(Math.round(easeOut(progress) * target))
+      if (progress < 1) rafRef.current = requestAnimationFrame(animate)
     }
 
     rafRef.current = requestAnimationFrame(animate)
-  }
-
-  useEffect(() => {
     return () => cancelAnimationFrame(rafRef.current)
-  }, [])
+  }, [target, delay])
 
-  return (
-    <span>
-      {prefix}{count.toLocaleString()}{suffix}
-    </span>
-  )
+  return <span>{prefix}{count.toLocaleString()}{suffix}</span>
 }
 
 export default function Stats() {
